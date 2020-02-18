@@ -1,0 +1,58 @@
+<style lang="less">
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+</style>
+
+<script>
+import wepy from '@wepy/core';
+import {store} from '@/store/index';
+import promisify from '@wepy/use-promisify'
+
+wepy.use(promisify)
+
+wepy.app({
+  hooks: {
+  },
+  globalData: {
+    userInfo: null,
+    selectedIndex: 0
+  },
+
+  onLaunch() {
+  },
+
+  methods: {
+  }
+});
+</script>
+<config>
+{
+    pages: [
+      'pages/index',
+      'pages/index2'
+    ],
+    window: {
+      backgroundTextStyle: 'light',
+      navigationBarBackgroundColor: '#fff',
+      navigationBarTitleText: 'WeChat',
+      navigationBarTextStyle: 'black'
+    },
+    tabBar: {
+      "custom": true,
+      // list 不重要，由 /src/custom-tab-bar/index.wpy 控制，默认要求至少两项已存在的 view
+      "list": [{
+        "pagePath": "pages/index",
+        "text": "不重要，不需要改"
+      }, {
+        "pagePath": "pages/index2",
+        "text": "不重要，不需要改"
+      }]
+    },
+}
+</config>

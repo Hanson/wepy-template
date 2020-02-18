@@ -1,0 +1,64 @@
+<template>
+  <van-tabbar 
+    active="{{ selected }}">
+      <van-tabbar-item wx:for="{{list}}" wx:key="index" data-path="{{item.pagePath}}" data-index="{{index}}" bindtap="switchTab" icon="{{ item.icon }}">{{item.text}}</van-tabbar-item>
+  </van-tabbar>
+</template>
+
+
+<script>
+  import wepy from '@wepy/core'
+  import { mapState, mapActions } from '@wepy/x';
+  import {store} from '../store/index.js';
+
+  wepy.component({
+    store,
+    data: {
+      //selected: 0,
+      list: [{
+        pagePath: "/pages/index",
+        icon: "home-o",
+        text: "组件"
+      }, {
+        pagePath: "/pages/index2",
+        icon: "friends-o",
+        text: "接口"
+      }, {
+        pagePath: "/pages/index2",
+        icon: "friends-o",
+        text: "接口2"
+      }, {
+        pagePath: "/pages/index2",
+        icon: "friends-o",
+        text: "接口3"
+      }]
+    },
+    props: {
+    },
+    computed: {
+      ...mapState({
+        selected: state => state.tabbar.selected,
+      })
+    },
+    methods: {
+      switchTab(e) {
+        const data = e.currentTarget.dataset
+        const url = data.path
+        wx.switchTab({url})
+        store.dispatch('tabbar/switchTab', data.index)
+      }
+    }
+  })
+</script>
+
+<style lang="less" scoped>
+</style>
+
+<config>
+{
+  "usingComponents": {
+    "van-tabbar": "~@/components/vant/tabbar/index",
+    "van-tabbar-item": "~@/components/vant/tabbar-item/index"
+  }
+}
+</config>

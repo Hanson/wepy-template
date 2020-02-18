@@ -1,0 +1,54 @@
+
+<template>
+  <div class="container">
+    template1
+  </div>
+</template>
+
+<script>
+  import wepy from '@wepy/core'
+  import {store} from '@/store/index';
+  import http from '@/mixins/http';
+  import { mapState, mapActions } from '@wepy/x';
+
+  wepy.page({
+    store,
+    hooks: {
+    },
+    computed: {
+      ...mapState('user', [
+        'userInfo',
+        'accessToken'
+      ])
+    },
+    methods: {
+      ...mapActions('user', [
+        'login'
+      ]),
+      async test () {
+          let response = await http('POST', 'test')
+      }
+    },
+    data: {
+    },
+
+    async onLoad () {
+      if (!this.accessToken) {
+        this.login().then(res => {
+          console.log('onLoad')
+          this.test()
+        })
+      } else {
+        console.log('onLoad')
+      }
+    }
+  });
+</script>
+<config>
+{
+    navigationBarTitleText: '标题',
+    usingComponents: {
+      "van-button": "~@/components/vant/button/index"
+    }
+}
+</config>

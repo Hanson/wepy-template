@@ -28,12 +28,10 @@ export default {
       )
     },
     async getToken ({ commit }, code) {
-      Utils.loading('正在登录')
       return http('POST', 'login', {code: code})
     },
     saveToken ({ commit }, response) {
       let data = response.data.data
-      Utils.hideLoading()
       commit('setState', ['accessToken', data.access_token]) // 保存 token
       commit('setState', ['userInfo', data.wechat_user]) // 保存微信用户信息
     }

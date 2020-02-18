@@ -2,6 +2,8 @@
 
 基于 wepy 的小程序开发模板，此项目为了减少每次新项目的基础代码工作量，此项目 UI 使用 [youzan/vant-weapp](https://github.com/youzan/vant-weapp)
 
+![R17L71THXLIEGYAW_2_UKY5.png](https://i.loli.net/2020/02/18/YQa9VGS2d6kBI81.png)
+
 ## 安装
 
 ```

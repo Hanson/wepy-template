@@ -2,7 +2,11 @@
 
 基于 wepy 的小程序开发模板，此项目为了减少每次新项目的基础代码工作量，此项目 UI 使用 [youzan/vant-weapp](https://github.com/youzan/vant-weapp)
 
-![R17L71THXLIEGYAW_2_UKY5.png](https://i.loli.net/2020/02/18/YQa9VGS2d6kBI81.png)
+## 截图
+
+<center class="half">
+    <img src="https://i.loli.net/2020/02/18/YQa9VGS2d6kBI81.png" height="400"/><img src="https://i.loli.net/2020/02/22/a5RGleJ4hyID6uX.png" height="400"/>
+</center>
 
 ## 安装
 
@@ -14,7 +18,7 @@ npm install
 // 开发环境
 npm run dev
 
-// 正式环境 
+// 正式环境
 npm run build
 ```
 
@@ -26,6 +30,7 @@ npm run build
 
 ## to do list
 
+* [x] 货架列表 页面模板
 * [ ] 我的 页面模板
 * [ ] 我的订单 页面模板
 * [ ] 商品列表 页面模板

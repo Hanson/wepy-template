@@ -16,7 +16,7 @@
     data: {
       //selected: 0,
       list: [{
-        pagePath: "/pages/index",
+        pagePath: "/pages/goods/cart-list",
         icon: "home-o",
         text: "组件"
       }, {

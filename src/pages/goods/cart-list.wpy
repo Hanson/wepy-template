@@ -1,0 +1,938 @@
+
+<style lang="less">
+scroll-view {
+  width: auto;
+}
+.cart-header {
+  height: 240rpx; // 头部 header 占位高度
+
+  .cart-header-item {
+    position: fixed;
+    background-color: white;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+
+    van-search {
+      width: 100%;
+    }
+    .cart-shop-info {
+      width: 100%;
+      display: flex;
+      padding: 20rpx 30rpx;
+      box-sizing: border-box;
+
+      .cart-shop-info_view {
+        flex: 1;
+
+        .cart-distance_text {
+          color: #aaaaaa;
+          font-size: 30rpx;
+          margin-top: 10rpx;
+        }
+      }
+    }
+  }
+}
+
+.cart-goods-view {
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  border-top: 1px solid #eee;
+
+  .van-card {
+    padding: 32rpx; // 左侧标签宽度 170rpx + 边距 20rpx
+    background-color: white;
+
+    .van-card__title {
+      font-size: 28rpx;
+      padding-bottom: 10rpx;
+      font-weight: 500;
+    }
+
+    .van-card__desc {
+      padding-bottom: 10rpx;
+    }
+
+    .van-card__price {
+      color: black;
+      font-size: 30rpx;
+      font-weight: 500;
+    }
+  }
+  .van-sidebar-item__text {
+    font-size: 24rpx;
+  }
+  .van-sidebar-item--selected {
+    border-color: #1989fa;
+  }
+  .cart-category-name_view {
+    font-size: 28rpx;
+    color: #aaaaaa;
+    padding: 40rpx 20rpx 20rpx 20rpx;
+  }
+}
+
+</style>
+
+<template>
+  <div class="container">
+    <view class="cart-header">
+      <view class="cart-header-item">
+        <van-search placeholder="搜索" value="{{ value }}" input-align="center"/>
+        <view class="cart-shop-info">
+          <view class="cart-shop-info_view">
+            <view>广州某某店<van-icon name="arrow" /></view>
+            <view class="cart-distance_text">距离您1km</view>
+          </view>
+          <view>
+            <van-switch checked="{{ isTakeaway }}" bind:change="switchTakeaway" size="24px"/>
+          </view>
+        </view>
+      </view>
+    </view>
+    <view class="cart-goods-view">
+      <scroll-view scroll-y="true" scroll-into-view="category_{{ categoryIndex }}" style="height:{{ scrollHeight + 'px' }}">
+        <van-sidebar active-key="{{ categoryIndex }}" bind:change="changeActiveCategory">
+          <van-sidebar-item title="{{ category.name }}" v-for="(category, index) in cartRaw" id="category_{{ index }}" data-category="{{ index }}"/>
+        </van-sidebar>
+      </scroll-view>
+      <scroll-view scroll-y="true" scroll-into-view="goods_{{ goodsIndex }}" bindscroll="onGoodsScroll" style="height:{{ scrollHeight + 'px' }}">
+        <view v-for="(category, categoryIndex) in cartRaw">
+          <view class="cart-category-name_view" data-category="{{ categoryIndex }}" id="goods_{{ categoryIndex }}">{{ category.name }}</view>
+          <van-card
+            class="cart-goods-item"
+            price="{{ goods.price }}"
+            desc="{{ goods.desc }}"
+            title="{{ goods.name }}"
+            thumb="{{ goods.pic }}"
+            v-for="(goods, index) in category.goods"
+            data-category="{{ categoryIndex }}"
+          />
+        </view>
+      </scroll-view>  
+    </view>
+  </div>
+</template>
+
+<script>
+  import wepy from '@wepy/core'
+  import {store} from '@/store/index';
+  import http from '@/mixins/http';
+  import { mapState, mapActions } from '@wepy/x';
+
+  wepy.page({
+    store,
+    hooks: {
+    },
+    computed: {
+      ...mapState('user', [
+        'userInfo',
+        'accessToken'
+      ])
+    },
+    data: {
+      // 页面数据
+      categoryIndex: 0, // 用于 side bar active，从 0 开始
+      goodsIndex: 0, // 用于商品
+      scrollHeight: 0, // 滚动区域高度
+      goodsHeightArray: [], // 每个商品item高度与索引 {},
+
+      // 业务数据
+      isTakeaway: false,
+      cartRaw: 
+      [
+        {
+          "id": 1,
+          "name": "芝士茶",
+          "goods": [
+            {
+              "id": 1,
+              "name": "芝士绿茶",
+              "desc": "芝士绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 13.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 2,
+              "name": "芝士红茶",
+              "desc": "芝士红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 13.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 3,
+              "name": "芝士乌龙茶",
+              "desc": "芝士乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 13.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "name": "茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "绿茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 7.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "红茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 7.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "乌龙茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 7.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "奶茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 4,
+              "name": "珍珠奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "椰果奶茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "红豆奶茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "奶茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 4,
+              "name": "珍珠奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "椰果奶茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "红豆奶茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "奶茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 4,
+              "name": "珍珠奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "椰果奶茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "红豆奶茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "奶茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 4,
+              "name": "珍珠奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "椰果奶茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "红豆奶茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "奶茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 4,
+              "name": "珍珠奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "椰果奶茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "红豆奶茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "奶茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 4,
+              "name": "珍珠奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "椰果奶茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "红豆奶茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "奶茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 4,
+              "name": "珍珠奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "椰果奶茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "红豆奶茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "奶茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 4,
+              "name": "珍珠奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "椰果奶茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "红豆奶茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "奶茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 4,
+              "name": "珍珠奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "椰果奶茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "红豆奶茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "奶茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 4,
+              "name": "珍珠奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "椰果奶茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "红豆奶茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "奶茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 4,
+              "name": "珍珠奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "椰果奶茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "红豆奶茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "奶茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 4,
+              "name": "珍珠奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "椰果奶茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "红豆奶茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "奶茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 4,
+              "name": "珍珠奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "椰果奶茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "红豆奶茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "奶茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 4,
+              "name": "珍珠奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "椰果奶茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "红豆奶茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "奶茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 4,
+              "name": "珍珠奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "椰果奶茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "红豆奶茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "奶茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 4,
+              "name": "珍珠奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "椰果奶茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "红豆奶茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "奶茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 4,
+              "name": "珍珠奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "椰果奶茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "红豆奶茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "奶茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 4,
+              "name": "珍珠奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "椰果奶茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "红豆奶茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "name": "奶茶",
+          "goods": [
+            {
+              "id": 4,
+              "name": "奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 4,
+              "name": "珍珠奶茶",
+              "desc": "绿茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 5,
+              "name": "椰果奶茶",
+              "desc": "红茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            },
+            {
+              "id": 6,
+              "name": "红豆奶茶",
+              "desc": "乌龙茶由龙狂风是owe港龙刻画吧戳唐僧周戳个戳仍",
+              "price": 10.00,
+              "pic": "https://img.yzcdn.cn/vant/ipad.jpeg"
+            }
+          ]
+        }
+      ],
+    },
+    methods: {
+      ...mapActions('user', [
+        'login'
+      ]),
+      async test () {
+      },
+
+      // 外卖堂食切换
+      switchTakeaway (event) {
+        this.isTakeaway = event.$wx.detail
+      },
+
+      // 商品滚动
+      onGoodsScroll (event) {
+        let scrollTop = event.$wx.detail.scrollTop;
+        console.log(event)
+        for (let i = 0; i < this.goodsHeightArray.length - 1; i++) {
+          if (i == 0 && scrollTop < this.goodsHeightArray[i].height) {
+            this.categoryIndex = this.goodsHeightArray[0].categoryIndex
+            return
+          }
+          if (i + 1 >= this.goodsHeightArray.length - 1) {
+            this.categoryIndex = this.goodsHeightArray[this.goodsHeightArray.length - 1].categoryIndex
+            return
+          }
+          if (scrollTop >= this.goodsHeightArray[i].height && scrollTop <= this.goodsHeightArray[i + 1].height) {
+            this.categoryIndex = this.goodsHeightArray[i + 2].categoryIndex
+            return
+          }
+        }
+      },
+
+      // 切换分类
+      changeActiveCategory (event) {
+        this.goodsIndex = event.$wx.detail
+      },
+
+      // 计算 scroll view 高度
+      calcScrollViewHeight () {
+        let windowHeight = wx.getSystemInfoSync().windowHeight
+        let scrollHeight = windowHeight - 120 - 50 // 120 是上方高度，50 是 tabbar 高度
+        this.scrollHeight = scrollHeight
+      },
+
+      calcGoodsHeightArray () {
+        let query = wx.createSelectorQuery()
+        var that = this
+        query.selectAll('.cart-goods-item,.cart-category-name_view').boundingClientRect(function(n){
+          let s = 0
+          let heightArr = []
+          n.forEach((res) => {
+            console.log(res)
+            s += res.height;
+            heightArr.push({height: s, categoryIndex: res.dataset.category})
+          });
+          that.goodsHeightArray = heightArr;
+        }).exec()
+      }
+    },
+
+    async onLoad () {
+      this.calcScrollViewHeight()
+      this.calcGoodsHeightArray()
+      if (!this.accessToken) {
+        this.login().then(res => {
+          console.log('onLoad')
+          this.test()
+        })
+      } else {
+        console.log('onLoad')
+        this.test()
+      }
+    }
+  });
+</script>
+<config>
+{
+    navigationBarTitleText: '外卖列表',
+    usingComponents: {
+      "van-sidebar": "~@/components/vant/sidebar/index",
+      "van-sidebar-item": "~@/components/vant/sidebar-item/index",
+      "van-row": "~@/components/vant/row/index",
+      "van-col": "~@/components/vant/col/index",
+      "van-switch": "~@/components/vant/switch/index",
+      "van-search": "~@/components/vant/search/index",
+      "van-card": "~@/components/vant/card/index",
+      "van-icon": "~@/components/vant/icon/index"
+    }
+}
+</config>
